@@ -25,7 +25,7 @@ Export collision mesh to Wavefront Obj file (*.obj).
 Export Shape file (*.mod)
 
 * ``o_mapcode_CSV`` +1 argument<br>
-Export mapcode data from 0100 chunk from a CSV file<br>
+Export mapcode data from 0100 chunk to a CSV file<br>
 	\- column 1 is **attribute**<br>
 	\- column 2 is **slip_code**<br>
 	\- column 3 is **is_bald**<br>
