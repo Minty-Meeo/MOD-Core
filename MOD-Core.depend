@@ -1,0 +1,51 @@
+# depslib dependency file v1.0
+1585130639 source:c:\users\bradley\documents\c++\me\mod core\src\shape.cpp
+	"shape.h"
+
+1585129687 source:c:\users\bradley\documents\c++\me\mod core\src\util.cpp
+	"util.h"
+
+1585129696 c:\users\bradley\documents\c++\me\mod core\src\util.h
+	<stdint.h>
+	<fstream>
+	<vector>
+	<stack>
+
+1585130520 source:c:\users\bradley\documents\c++\me\mod core\src\main.cpp
+	"util.h"
+	"shape.h"
+	<iostream>
+
+1585130113 c:\users\bradley\documents\c++\me\mod core\src\shape.h
+	"util.h"
+	<vector>
+	<stdint.h>
+	<fstream>
+	<math.h>
+
+1585285712 source:c:\users\bradley\documents\github\mod-core\src\main.cpp
+	"util.h"
+	"shape.h"
+	<iostream>
+
+1585283199 c:\users\bradley\documents\github\mod-core\src\util.h
+	<stdint.h>
+	<fstream>
+	<vector>
+	<stack>
+	<limits>
+
+1585285699 c:\users\bradley\documents\github\mod-core\src\shape.h
+	"util.h"
+	<vector>
+	<stdint.h>
+	<fstream>
+	<math.h>
+	<string.h>
+
+1585284488 source:c:\users\bradley\documents\github\mod-core\src\shape.cpp
+	"shape.h"
+
+1585283199 source:c:\users\bradley\documents\github\mod-core\src\util.cpp
+	"util.h"
+

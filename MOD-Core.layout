@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_layout_file>
+	<FileVersion major="1" minor="0" />
+	<ActiveTarget name="Release" />
+	<File name="src\util.cpp" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="42" topLine="0" />
+		</Cursor>
+		<Folding>
+			<Collapse line="26" />
+			<Collapse line="33" />
+			<Collapse line="35" />
+			<Collapse line="41" />
+			<Collapse line="44" />
+			<Collapse line="48" />
+			<Collapse line="52" />
+			<Collapse line="55" />
+			<Collapse line="59" />
+			<Collapse line="63" />
+			<Collapse line="70" />
+		</Folding>
+	</File>
+	<File name="src\shape.cpp" open="1" top="1" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="44" topLine="0" />
+		</Cursor>
+		<Folding>
+			<Collapse line="10" />
+			<Collapse line="12" />
+			<Collapse line="31" />
+			<Collapse line="36" />
+			<Collapse line="39" />
+			<Collapse line="44" />
+			<Collapse line="81" />
+			<Collapse line="92" />
+			<Collapse line="98" />
+			<Collapse line="102" />
+			<Collapse line="109" />
+			<Collapse line="112" />
+			<Collapse line="116" />
+			<Collapse line="126" />
+			<Collapse line="130" />
+			<Collapse line="163" />
+			<Collapse line="170" />
+			<Collapse line="189" />
+			<Collapse line="194" />
+			<Collapse line="196" />
+			<Collapse line="202" />
+		</Folding>
+	</File>
+	<File name="src\shape.h" open="1" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="156" topLine="0" />
+		</Cursor>
+		<Folding>
+			<Collapse line="33" />
+			<Collapse line="36" />
+			<Collapse line="42" />
+			<Collapse line="45" />
+			<Collapse line="46" />
+			<Collapse line="63" />
+			<Collapse line="65" />
+		</Folding>
+	</File>
+	<File name="src\main.cpp" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="39" topLine="0" />
+		</Cursor>
+		<Folding>
+			<Collapse line="5" />
+		</Folding>
+	</File>
+	<File name="src\util.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="366" topLine="0" />
+		</Cursor>
+		<Folding>
+			<Collapse line="10" />
+			<Collapse line="19" />
+		</Folding>
+	</File>
+	<Target name="Release" top="">
+		<File name="src\main.cpp" />
+		<File name="src\shape.h" />
+		<File name="src\shape.cpp" />
+		<File name="src\util.h" />
+		<File name="src\util.cpp" />
+	</Target>
+</CodeBlocks_layout_file>
