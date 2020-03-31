@@ -2,105 +2,134 @@
 
 namespace util {
 	
-	uint32_t swap32( uint32_t value ) {	// Byte-Swapping 32 (1 of 2)
-		return (
-			( ( value & 0xff000000) >> 24 ) | 
-			( ( value & 0x00ff0000) >>  8 ) | 
-			( ( value & 0x0000ff00) <<  8 ) | 
-			( ( value & 0x000000ff) << 24 )
-		);
+	void swap32( mess32_t& value ) {	// Byte-Swapping 32 (1 of 2)
+		#if LITTLE_ENDIAN
+		mess32_t temp = value;
+		value.str[0] = temp.str[3];
+		value.str[1] = temp.str[2];
+		value.str[2] = temp.str[1];
+		value.str[3] = temp.str[0];
+		#endif
 	}
-	uint16_t swap16( uint16_t value ) {	// Byte-Swapping 16 (1 of 2)
-		return (
-			( ( value & 0xff00 ) >>  8) |
-			( ( value & 0x00ff ) <<  8)
-		);
+	void swap16( mess16_t& value ) {	// Byte-Swapping 16 (1 of 2)
+		#if LITTLE_ENDIAN
+		mess16_t temp = value;
+		value.str[0] = temp.str[1];
+		value.str[1] = temp.str[0];
+		#endif
 	}
-	int32_t swap32( int32_t value ) {	// Byte-Swapping 32 (2 of 2)
-		return (
-			( ( value & 0xff000000) >> 24 ) | 
-			( ( value & 0x00ff0000) >>  8 ) | 
-			( ( value & 0x0000ff00) <<  8 ) | 
-			( ( value & 0x000000ff) << 24 )
-		);
-	}
-	int16_t swap16( int16_t value ) {	// Byte-Swapping 16 (2 of 2)
-		return (
-			( ( value & 0xff00 ) >>  8) |
-			( ( value & 0x00ff ) <<  8)
-		);
-	}
+
 	
-	uint32_t getField( uint32_t value, uint32_t start, uint32_t len ) {
-		uint32_t mask = 0;											// Initialize mask to 0
-		for ( uint32_t i = 0; i < len; i++ ) {						// Generate mask
-			mask = ( mask << 1 ) + 1;									// Substitute for adding powers of 2
+	uint32_t getField( uint32_t input, uint32_t start, uint32_t len ) {
+		uint32_t output;
+		uint32_t mask = 0;										// Initialize mask to 0
+		for ( uint32_t i = 0; i < len; i++ ) {					// Generate mask
+			mask = ( mask << 1 ) | 1;
 		}
-		return ( ( value >> ( 32 - ( start + len ) ) ) & mask );	// Bitwise math
+		output = ( input >> ( 32 - ( start + len ) ) ) & mask;	// Shift field over then sanitize to get output
+		return output;
 	}
-	uint32_t setField( uint32_t value, uint32_t start, uint32_t len ) {
-		uint32_t mask = 0;											// Initialize mask to 0
-		for ( uint32_t i = 0; i < len; i++ ) {						// Generate mask
-			mask = ( mask << 1 ) + 1;									// Substitute for adding powers of 2
+	void setField( uint32_t& output, uint32_t input, uint32_t start, uint32_t len ) {
+		uint32_t mask = 0;										// Initialize mask to 0
+		for ( uint32_t i = 1; i <= len; i++ ) {					// Generate mask of correct size
+			mask = ( mask << 1 ) | 1;
 		}
-		value = value & (~mask); // Clear field
-		return ( ( value << ( 32 - ( start + len ) ) ) & mask );	// Bitwise math
+		mask = mask << ( 32 - len - start );					// Shift mask to cover destination
+		output = ( output & ~mask ) | ( ( input << ( 32 - ( start + len ) ) & mask ) );	// Clear destination bits then place sanitized field in output
 	}
-	
-	void fstream_B::get( uint8_t&  v ) {	// Read u8
-		read( reinterpret_cast<char*>( &v ), 1 );
+	uint8_t  fstream_B::get_u08(  ) {		// Read u8
+		mess8_t temp;
+		read( temp.str, 1 );
+		return temp.u8;
 	}
-	void fstream_B::get( uint16_t& v ) {	// Read u16
-		read( reinterpret_cast<char*>( &v ), 2 );
-		v = util::swap16( v );
+	uint16_t fstream_B::get_u16(  ) {		// Read u16
+		mess16_t temp;
+		read( temp.str, 2 );
+		swap16( temp );
+		return temp.u16;
 	}
-	void fstream_B::get( uint32_t& v ) {	// Read u32
-		read( reinterpret_cast<char*>( &v ), 4 );
-		v = util::swap32( v );
+	uint32_t fstream_B::get_u32(  ) {		// Read u32
+		mess32_t temp;
+		read( temp.str, 4 );
+		swap32( temp );
+		return temp.u32;
 	}
-	void fstream_B::get( int8_t&   v ) {	// Read s8
-		read( reinterpret_cast<char*>( &v ), 1 );
+	int8_t   fstream_B::get_s08(  ) {		// Read s8
+		mess8_t temp;
+		read( temp.str, 1 );
+		return temp.s8;
 	}
-	void fstream_B::get( int16_t&  v ) {	// Read s16
-		read( reinterpret_cast<char*>( &v ), 2 );
-		v = util::swap16( v );
+	int16_t  fstream_B::get_s16(  ) {		// Read s16
+		mess16_t temp;
+		read( temp.str, 2 );
+		swap16( temp );
+		return temp.s16;
 	}
-	void fstream_B::get( int32_t&  v ) {	// Read s32
-		read( reinterpret_cast<char*>( &v ), 4 );
-		v = util::swap32( v );
+	int32_t  fstream_B::get_s32(  ) {		// Read s32
+		mess32_t temp;
+		read( temp.str, 4 );
+		swap32( temp );
+		return temp.s32;
 	}
-	void fstream_B::get( float&    v ) {	// Read float
-		uint32_t temp;
-		read( reinterpret_cast<char*>( &temp ), 4 );
-		temp = util::swap32( temp );
-		v = reinterpret_cast<float&>( temp );
+	float    fstream_B::get_flt(  ) {		// Read float
+		mess32_t temp;
+		read( temp.str, 4 );
+		swap32( temp );
+		return temp.flt;
 	}
-	void fstream_B::put( uint8_t  v ) {	// Read u8
-		write( reinterpret_cast<char*>( &v ), 1 );
+	void fstream_B::get_u08( uint8_t&  v ) {	// Read u8
+		v = get_u08();
 	}
-	void fstream_B::put( uint16_t v ) {	// Read u16
-		v = util::swap16( v );
-		write( reinterpret_cast<char*>( &v ), 2 );
+	void fstream_B::get_u16( uint16_t& v ) {	// Read u16
+		v = get_u16();
 	}
-	void fstream_B::put( uint32_t v ) {	// Read u32
-		v = util::swap32( v );
-		write( reinterpret_cast<char*>( &v ), 4 );
+	void fstream_B::get_u32( uint32_t& v ) {	// Read u32
+		v = get_u32();
 	}
-	void fstream_B::put( int8_t   v ) {	// Read s8
-		write( reinterpret_cast<char*>( &v ), 1 );
+	void fstream_B::get_s08( int8_t&   v ) {	// Read s8
+		v = get_s08();
 	}
-	void fstream_B::put( int16_t  v ) {	// Read s16
-		v = util::swap16( v );
-		write( reinterpret_cast<char*>( &v ), 2 );
+	void fstream_B::get_s16( int16_t&  v ) {	// Read s16
+		v = get_s16();
 	}
-	void fstream_B::put( int32_t  v ) {	// Read s32
-		v = util::swap32( v );
-		write( reinterpret_cast<char*>( &v ), 4 );
+	void fstream_B::get_s32( int32_t&  v ) {	// Read s32
+		v = get_s32();
 	}
-	void fstream_B::put( float    v ) {	// Read float
-		uint32_t temp = reinterpret_cast<uint32_t&>( v );
-		temp = swap32( temp );
-		write( reinterpret_cast<char*>( &temp ), 4 );
+	void fstream_B::get_flt( float&    v ) {	// Read float
+		v = get_flt();
+	}
+	void fstream_B::put_u08( uint8_t  v ) {		// Write u8
+		mess8_t* temp = (mess8_t*)&v;		// Create mess32_t that encloses v
+		write( temp->str, 1 );				// Write to file stream
+	}
+	void fstream_B::put_u16( uint16_t v ) {		// Write u16
+		mess16_t* temp = (mess16_t*)&v;		// Create mess32_t that encloses v
+		swap16( *temp );					// Endian Swap
+		write( temp->str, 2 );				// Write to file stream
+	}
+	void fstream_B::put_u32( uint32_t v ) {		// Write u32
+		mess32_t* temp = (mess32_t*)&v;		// Create mess32_t that encloses v
+		swap32( *temp );					// Endian Swap
+		write( temp->str, 4 );				// Write to file stream
+	}
+	void fstream_B::put_s08( int8_t   v ) {		// Write s8
+		mess8_t* temp = (mess8_t*)&v;		// Create mess32_t that encloses v
+		write( temp->str, 1 );				// Write to file stream
+	}
+	void fstream_B::put_s16( int16_t  v ) {		// Write s16
+		mess16_t* temp = (mess16_t*)&v;		// Create mess32_t that encloses v
+		swap16( *temp );					// Endian Swap
+		write( temp->str, 2 );				// Write to file stream
+	}
+	void fstream_B::put_s32( int32_t  v ) {		// Write s32
+		mess32_t* temp = (mess32_t*)&v;		// Create mess32_t that encloses v
+		swap32( *temp );					// Endian Swap
+		write( temp->str, 4 );				// Write to file stream
+	}
+	void fstream_B::put_flt( float    v ) {		// Write float
+		mess32_t* temp = (mess32_t*)&v;		// Create mess32_t that encloses v
+		swap32( *temp );					// Endian Swap
+		write( temp->str, 4 );				// Write to file stream
 	}
 	void fstream_B::skip( std::ios::streamoff offset ) {
 		seekp( offset, std::ios::cur );

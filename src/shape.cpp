@@ -1,35 +1,12 @@
 #include "shape.h"
 
-
-namespace mod {
-	/// sub-classes for vectors
-		// xy
-	void xy::normalize() {
-		float magnitude = sqrt( ( x * x ) + ( y * y ) );
-		x = x / magnitude;
-		y = y / magnitude;
-	}
-	xy::xy() {
-	}
-	xy::xy( float a, float b ) {
-		x = a;
-		y = b;
-	}
-		// xyz
+namespace model3D {
 	void xyz::normalize() {
 		float magnitude = sqrt( ( x * x ) + ( y * y ) + ( z * z ) );
 		x = x / magnitude;
 		y = y / magnitude;
 		z = z / magnitude;
 	}
-	xyz::xyz() {
-	}
-	xyz::xyz( float a, float b, float c ) {
-		x = a;
-		y = b;
-		z = c;
-	}
-		// colTri
 	void colTri::recalibrate( std::vector<xyz>& vtxPos ) {
 		xyz& A = vtxPos[index_a];							// Lookup Vertex A
 		xyz& B = vtxPos[index_b];							// Lookup Vertex B
@@ -51,57 +28,116 @@ namespace mod {
 			( tri_normal.z * middle.z )
 		);
 	}
+	
 	/// i_Shape private subfunctions
-	void shape::i_Shape_0000( util::fstream_B& inFile ) {	// header
+	void shape::i_Shape_0000( util::fstream_B& inFile ) {	// info
+		uint32_t bitfield_temp;
 		inFile.ignore( 0x18 );	// Skip padding
-		inFile.get( header.year );
-		inFile.get( header.month );
-		inFile.get( header.date );
+		inFile.get_u16( info.year );
+		inFile.get_u08( info.month );
+		inFile.get_u08( info.date );
+		inFile.get_u32( bitfield_temp );
+		info.scalingrule = util::getField( bitfield_temp, 31, 1 );
+//		info.???         = util::getField( bitfield_temp, 30, 1 );
+//		info.???         = util::getField( bitfield_temp, 29, 1 );
+		info.embossbump  = util::getField( bitfield_temp, 28, 1 );
+//		info.???         = util::getField( bitfield_temp, 21, 1 );
 	}
 	void shape::i_Shape_0010( util::fstream_B& inFile ) {	// vtxPos
-		uint32_t packetCount; inFile.get( packetCount );		// Read packet count
+		uint32_t packetCount; inFile.get_u32( packetCount );		// Read packet count
 		
 		inFile.ignore( 0x14 );									// Skip Padding
 		xyz temp;
 		for ( ; packetCount > 0; packetCount-- ) {
-			inFile.get( temp.x );
-			inFile.get( temp.y );
-			inFile.get( temp.z );
+			inFile.get_flt( temp.x );
+			inFile.get_flt( temp.y );
+			inFile.get_flt( temp.z );
 			vtxPos.push_back( temp );
 		}
 	}
 	void shape::i_Shape_0013( util::fstream_B& inFile ) {	// vtxColor
+		uint32_t packetCount; inFile.get_u32( packetCount );		// Read packet count
 		
+		inFile.ignore( 0x14 );									// Skip Padding
+		color temp;
+		for ( ; packetCount > 0; packetCount-- ) {
+			inFile.get_u32( temp.rgba );
+			vtxColor.push_back( temp );
+		}
 	}
 	void shape::i_Shape_0011( util::fstream_B& inFile ) {	// vtxNrm
-		uint32_t packetCount; inFile.get( packetCount );		// Read packet count
+		uint32_t packetCount; inFile.get_u32( packetCount );		// Read packet count
 		inFile.ignore( 0x14 );									// Skip Padding
 		xyz temp;
 		for ( ; packetCount > 0; packetCount-- ) {
-			inFile.get( temp.x );
-			inFile.get( temp.y );
-			inFile.get( temp.z );
+			inFile.get_flt( temp.x );
+			inFile.get_flt( temp.y );
+			inFile.get_flt( temp.z );
 			vtxNrm.push_back( temp );
 		}
 	}
 	void shape::i_Shape_0012( util::fstream_B& inFile ) {	// vtxNBT
-		
+		uint32_t packetCount; inFile.get_u32( packetCount );		// Read packet count
+		inFile.ignore( 0x14 );									// Skip Padding
+		nbt temp;
+		for ( ; packetCount > 0; packetCount-- ) {
+			inFile.get_flt( temp.normal.x );
+			inFile.get_flt( temp.normal.y );
+			inFile.get_flt( temp.normal.z );
+			inFile.get_flt( temp.binormal.x );
+			inFile.get_flt( temp.binormal.y );
+			inFile.get_flt( temp.binormal.z );
+			inFile.get_flt( temp.tangent.x );
+			inFile.get_flt( temp.tangent.y );
+			inFile.get_flt( temp.tangent.z );
+			vtxNBT.push_back( temp );
+		}
 	}
 	void shape::i_Shape_001X( util::fstream_B& inFile, uint32_t i ) {	// texCoord (0 to 7)
-		uint32_t packetCount; inFile.get( packetCount );		// Read packet count
+		uint32_t packetCount; inFile.get_u32( packetCount );		// Read packet count
 		inFile.ignore( 0x14 );									// Skip Padding
-		xy temp;
+		uv temp;
 		for ( ; packetCount > 0; packetCount-- ) {
-			inFile.get( temp.x );
-			inFile.get( temp.y );
+			inFile.get_flt( temp.u );
+			inFile.get_flt( temp.v );
 			texCoord[i].push_back( temp );
 		}
 	}
 	void shape::i_Shape_0020( util::fstream_B& inFile ) {	// texImg
-		
+		uint32_t packet_count; inFile.get_u32( packet_count );		// Read packet count
+		inFile.ignore( 0x14 );									// Skip Padding
+		mTXE temp;
+		std::streamsize data_size;
+		for ( ; packet_count > 0; packet_count-- ) {
+			inFile.get_u16( temp.res_x );
+			inFile.get_u16( temp.res_y );
+			inFile.get_u32( temp.format );
+			inFile.ignore( 0x04 );	// unknown field
+			inFile.ignore( 0x10 );
+			inFile.get_s32( data_size );
+			
+			printf( "%u\n", data_size );
+			
+//			char data_temp[data_size];
+//			inFile.read( data_temp, data_size );
+//			temp.data.assign( data_temp );
+			temp.data.resize( data_size );
+			inFile.read( temp.data.data(), data_size );	// Access vector's char* directly.
+			texImg.push_back( temp );
+		}
 	}
 	void shape::i_Shape_0022( util::fstream_B& inFile ) {	// texAttr
-		
+		uint32_t packetCount; inFile.get_u32( packetCount );		// Read packet count
+		inFile.ignore( 0x14 );									// Skip Padding
+		attr temp;
+		for ( ; packetCount > 0; packetCount-- ) {
+			inFile.get_u16( temp.texture_index );
+			inFile.get_u16( temp.pallette_index );
+			inFile.get_u08( temp.wrap_s );
+			inFile.get_u08( temp.wrap_t );
+			inFile.ignore( 6 );	// unknown fields
+			texAttr.push_back( temp );
+		}
 	}
 	void shape::i_Shape_0030( util::fstream_B& inFile ) {	// material
 		
@@ -115,35 +151,35 @@ namespace mod {
 	void shape::i_Shape_0050( util::fstream_B& inFile ) {	// mesh
 		
 	}
-	void shape::i_Shape_0060( util::fstream_B& inFile ) {	// rig
+	void shape::i_Shape_0060( util::fstream_B& inFile ) {	// joint
 		
 	}
-	void shape::i_Shape_0061( util::fstream_B& inFile ) {	// rigName
+	void shape::i_Shape_0061( util::fstream_B& inFile ) {	// jointName
 		
 	}
 	void shape::i_Shape_0080( util::fstream_B& inFile ) {	// ???
 		
 	}
 	void shape::i_Shape_0100( util::fstream_B& inFile ) {	// colMesh
-		uint32_t packetCount; inFile.get( packetCount );		// Read packet count
+		uint32_t packetCount; inFile.get_u32( packetCount );		// Read packet count
 		/* ??? */ inFile.ignore( 0x04 );
 		inFile.ignore( 0x10 );									// Skip Padding
 		inFile.ignore( 0x20 );									// Skip Padding
 		colTri temp;
 		uint32_t mapcode_temp;
 		for ( ; packetCount > 0; packetCount-- ) {
-			inFile.get( mapcode_temp );
-			inFile.get( temp.index_c );
-			inFile.get( temp.index_b );
-			inFile.get( temp.index_a );
+			inFile.get_u32( mapcode_temp );
+			inFile.get_u32( temp.index_c );
+			inFile.get_u32( temp.index_b );
+			inFile.get_u32( temp.index_a );
 			inFile.ignore( 2 );
-			inFile.get( temp.neighbor_ca );
-			inFile.get( temp.neighbor_bc );
-			inFile.get( temp.neighbor_ab );
-			inFile.get( temp.tri_normal.x );
-			inFile.get( temp.tri_normal.y );
-			inFile.get( temp.tri_normal.z );
-			inFile.get( temp.magnitude );
+			inFile.get_s16( temp.neighbor_ca );
+			inFile.get_s16( temp.neighbor_bc );
+			inFile.get_s16( temp.neighbor_ab );
+			inFile.get_flt( temp.tri_normal.x );
+			inFile.get_flt( temp.tri_normal.y );
+			inFile.get_flt( temp.tri_normal.z );
+			inFile.get_flt( temp.magnitude );
 			temp.mapcode.attribute = util::getField( mapcode_temp, 0, 3 );
 			temp.mapcode.slip_code = util::getField( mapcode_temp, 3, 2 );
 			temp.mapcode.is_bald   = util::getField( mapcode_temp, 5, 1 );
@@ -153,55 +189,158 @@ namespace mod {
 	void shape::i_Shape_0110( util::fstream_B& inFile ) {	// ???
 		
 	}
+	void shape::i_Shape_INI ( util::fstream_B& inFile ) {	// INI
+		std::ios::streampos ini_start, ini_end;
+		std::streamsize ini_size;
+		inFile.backup_g();					// Backup filepos
+		ini_start = inFile.tellg();			// ini_start
+		inFile.seekg( 0, std::ios::end );	// Seek to EOF
+		ini_end = inFile.tellg();			// ini_end
+		inFile.rewind_g();					// Rewind filepos
+		
+		ini_size = ini_end - ini_start;		// ini_size
+		char temp[ini_size+1] = {0};		// Create temp char*
+		inFile.read( temp, ini_size );		// Read INI in entirety
+		ini.assign( temp );					// Copy temp to internalized data
+	}
 
 	/// o_Shape private subfunctions
-	void shape::o_Shape_0000( util::fstream_B& outFile ) {	// header
-		
+	void shape::o_Shape_0000( util::fstream_B& outFile ) {	// info
+		uint32_t chunk_size = 0x38;
+		outFile.put_u32( 0x0000 );
+		outFile.put_u32( chunk_size );
+		outFile.backup_p();
+		outFile.skip( 0x18 );
+		uint32_t bitfield_temp = 0;
+		outFile.put_u16( info.year );
+		outFile.put_u08( info.month );
+		outFile.put_u08( info.date );
+		util::setField( bitfield_temp, info.scalingrule, 31, 1 );
+//		util::setField( bitfield_temp, info.???        , 30, 1 );
+//		util::setField( bitfield_temp, info.???        , 29, 1 );
+		util::setField( bitfield_temp, info.embossbump , 28, 1 );
+//		util::setField( bitfield_temp, info.???        , 21, 1 );
+		outFile.put_u32( bitfield_temp );
+		outFile.rewind_p();
+		outFile.skip( chunk_size );
 	}
 	void shape::o_Shape_0010( util::fstream_B& outFile ) {	// vtxPos
 		uint32_t chunk_size = calculate_chunk_size( vtxPos.size(), 0x0C );
-		outFile.put( 0x00000010 );
-		outFile.put( chunk_size );
+		outFile.put_u32( 0x0010 );
+		outFile.put_u32( chunk_size );
 		outFile.backup_p();
-		outFile.put( vtxPos.size() );
+		outFile.put_u32( vtxPos.size() );
 		outFile.skip( 0x14 );
 		for ( uint32_t packetCount = 0; packetCount < vtxPos.size(); packetCount++ ) {
-			outFile.put( vtxPos[packetCount].x );
-			outFile.put( vtxPos[packetCount].y );
-			outFile.put( vtxPos[packetCount].z );
+			outFile.put_flt( vtxPos[packetCount].x );
+			outFile.put_flt( vtxPos[packetCount].y );
+			outFile.put_flt( vtxPos[packetCount].z );
 		}
 		outFile.rewind_p();
 		outFile.skip( chunk_size );
 	}
 	void shape::o_Shape_0013( util::fstream_B& outFile ) {	// vtxColor
-		
+		uint32_t chunk_size = calculate_chunk_size( vtxColor.size(), 0x04 );
+		outFile.put_u32( 0x0013 );
+		outFile.put_u32( chunk_size );
+		outFile.backup_p();
+		outFile.put_u32( vtxColor.size() );
+		outFile.skip( 0x14 );
+		for ( uint32_t packetCount = 0; packetCount < vtxColor.size(); packetCount++ ) {
+			outFile.put_u32( vtxColor[packetCount].rgba );
+		}
+		outFile.rewind_p();
+		outFile.skip( chunk_size );
 	}
 	void shape::o_Shape_0011( util::fstream_B& outFile ) {	// vtxNrm
 		uint32_t chunk_size = calculate_chunk_size( vtxNrm.size(), 0x0C );
-		outFile.put( 0x00000011 );
-		outFile.put( chunk_size );
+		outFile.put_u32( 0x0011 );
+		outFile.put_u32( chunk_size );
 		outFile.backup_p();
-		outFile.put( vtxNrm.size() );
+		outFile.put_u32( vtxNrm.size() );
 		outFile.skip( 0x14 );
 		for ( uint32_t packetCount = 0; packetCount < vtxNrm.size(); packetCount++ ) {
-			outFile.put( vtxNrm[packetCount].x );
-			outFile.put( vtxNrm[packetCount].y );
-			outFile.put( vtxNrm[packetCount].z );
+			outFile.put_flt( vtxNrm[packetCount].x );
+			outFile.put_flt( vtxNrm[packetCount].y );
+			outFile.put_flt( vtxNrm[packetCount].z );
 		}
 		outFile.rewind_p();
 		outFile.skip( chunk_size );
 	}
 	void shape::o_Shape_0012( util::fstream_B& outFile ) {	// vtxNBT
-		
+		uint32_t chunk_size = calculate_chunk_size( vtxNBT.size(), 0x24 );
+		outFile.put_u32( 0x0012 );
+		outFile.put_u32( chunk_size );
+		outFile.backup_p();
+		outFile.put_u32( vtxNBT.size() );
+		outFile.skip( 0x14 );
+		for ( uint32_t packetCount = 0; packetCount < vtxNBT.size(); packetCount++ ) {
+			outFile.put_flt( vtxNBT[packetCount].normal.x );
+			outFile.put_flt( vtxNBT[packetCount].normal.y );
+			outFile.put_flt( vtxNBT[packetCount].normal.z );
+			outFile.put_flt( vtxNBT[packetCount].binormal.x );
+			outFile.put_flt( vtxNBT[packetCount].binormal.y );
+			outFile.put_flt( vtxNBT[packetCount].binormal.z );
+			outFile.put_flt( vtxNBT[packetCount].tangent.x );
+			outFile.put_flt( vtxNBT[packetCount].tangent.y );
+			outFile.put_flt( vtxNBT[packetCount].tangent.z );
+		}
+		outFile.rewind_p();
+		outFile.skip( chunk_size );
 	}
 	void shape::o_Shape_001X( util::fstream_B& outFile, uint32_t i ) {	// texCoord (0 to 7)
-		
+		uint32_t chunk_size = calculate_chunk_size( texCoord[i].size(), 0x08 );
+		outFile.put_u32( 0x0018 + i );
+		outFile.put_u32( chunk_size );
+		outFile.backup_p();
+		outFile.put_u32( texCoord[i].size() );
+		outFile.skip( 0x14 );
+		for ( uint32_t packetCount = 0; packetCount < texCoord[i].size(); packetCount++ ) {
+			outFile.put_flt( texCoord[i][packetCount].u );
+			outFile.put_flt( texCoord[i][packetCount].v );
+		}
+		outFile.rewind_p();
+		outFile.skip( chunk_size );
 	}
 	void shape::o_Shape_0020( util::fstream_B& outFile ) {	// texImg
-		
+		uint32_t chunk_size = 0x18;										// Start with just chunk header size
+		for ( uint32_t i = 0; i < texImg.size(); i++ ) 
+			chunk_size += 0x20 + texImg[i].data.size() 					// Add size of (mTXE Header + mTXE Data)
+			+ ( ( 0x20 - ( texImg[i].data.size() % 0x20 ) ) % 0x20 );	// Resolve 0x20 alignment (in case that's needed?)
+		printf( "%u\n", chunk_size );
+		outFile.put_u32( 0x0020 );
+		outFile.put_u32( chunk_size );
+		outFile.backup_p();
+		outFile.put_u32( texImg.size() );
+		outFile.skip( 0x14 );
+		for ( uint32_t packetCount = 0; packetCount < texImg.size(); packetCount++ ) {
+			outFile.put_u16( texImg[packetCount].res_x );
+			outFile.put_u16( texImg[packetCount].res_y );
+			outFile.put_u32( texImg[packetCount].format );
+			outFile.skip( 0x04 );	// unknown field
+			outFile.skip( 0x10 );
+			outFile.put_u32( texImg[packetCount].data.size() );
+			outFile.write( texImg[packetCount].data.data(), texImg[packetCount].data.size() );
+		}
+		outFile.rewind_p();
+		outFile.skip( chunk_size );
 	}
 	void shape::o_Shape_0022( util::fstream_B& outFile ) {	// texAttr
-		
+		uint32_t chunk_size = calculate_chunk_size( texAttr.size(), 0x0C );
+		outFile.put_u32( 0x0022 );
+		outFile.put_u32( chunk_size );
+		outFile.backup_p();
+		outFile.put_u32( texAttr.size() );
+		outFile.skip( 0x14 );
+		for ( uint32_t packet_count = 0; packet_count < texAttr.size(); packet_count++ ) {
+			outFile.put_u16( texAttr[packet_count].texture_index );
+			outFile.put_u16( texAttr[packet_count].pallette_index );
+			outFile.put_u08( texAttr[packet_count].wrap_s );
+			outFile.put_u08( texAttr[packet_count].wrap_t );
+			outFile.skip( 6 );	// unknown fields
+		}
+		outFile.rewind_p();
+		outFile.skip( chunk_size );
 	}
 	void shape::o_Shape_0030( util::fstream_B& outFile ) {	// material
 		
@@ -215,10 +354,10 @@ namespace mod {
 	void shape::o_Shape_0050( util::fstream_B& outFile ) {	// mesh
 		
 	}
-	void shape::o_Shape_0060( util::fstream_B& outFile ) {	// rig
+	void shape::o_Shape_0060( util::fstream_B& outFile ) {	// joint
 		
 	}
-	void shape::o_Shape_0061( util::fstream_B& outFile ) {	// rigName
+	void shape::o_Shape_0061( util::fstream_B& outFile ) {	// jointName
 		
 	}
 	void shape::o_Shape_0080( util::fstream_B& outFile ) {	// ???
@@ -227,25 +366,25 @@ namespace mod {
 	void shape::o_Shape_0100( util::fstream_B& outFile ) {	// colMesh
 		const uint32_t packet_size = 0x28;
 		uint32_t chunk_size = calculate_chunk_size( colMesh.size(), packet_size ) + 0x20;
-		outFile.put( 0x00000100 );
-		outFile.put( chunk_size );
+		outFile.put_u32( 0x0100 );
+		outFile.put_u32( chunk_size );
 		outFile.backup_p();
-		outFile.put( colMesh.size() );
+		outFile.put_u32( colMesh.size() );
 		outFile.skip( 0x14 );
 		outFile.skip( 0x20 );
 		for ( uint32_t packetCount = 0; packetCount < colMesh.size(); packetCount++ ) {
-			outFile.put( colMesh[packetCount].mapcode.u32() );
-			outFile.put( colMesh[packetCount].index_c );
-			outFile.put( colMesh[packetCount].index_b );
-			outFile.put( colMesh[packetCount].index_a );
+			outFile.put_u32( colMesh[packetCount].mapcode.u32() );
+			outFile.put_u32( colMesh[packetCount].index_c );
+			outFile.put_u32( colMesh[packetCount].index_b );
+			outFile.put_u32( colMesh[packetCount].index_a );
 			outFile.skip( 2 );
-			outFile.put( colMesh[packetCount].neighbor_ca );
-			outFile.put( colMesh[packetCount].neighbor_bc );
-			outFile.put( colMesh[packetCount].neighbor_ab );
-			outFile.put( colMesh[packetCount].tri_normal.x );
-			outFile.put( colMesh[packetCount].tri_normal.y );
-			outFile.put( colMesh[packetCount].tri_normal.z );
-			outFile.put( colMesh[packetCount].magnitude );
+			outFile.put_u16( colMesh[packetCount].neighbor_ca );
+			outFile.put_u16( colMesh[packetCount].neighbor_bc );
+			outFile.put_u16( colMesh[packetCount].neighbor_ab );
+			outFile.put_flt( colMesh[packetCount].tri_normal.x );
+			outFile.put_flt( colMesh[packetCount].tri_normal.y );
+			outFile.put_flt( colMesh[packetCount].tri_normal.z );
+			outFile.put_flt( colMesh[packetCount].magnitude );
 		}
 		outFile.rewind_p();
 		outFile.skip( chunk_size );
@@ -255,13 +394,13 @@ namespace mod {
 	}
 	void shape::o_Shape_FFFF( util::fstream_B& outFile ) {	// EOF
 		uint32_t chunk_size = 0x18;
-		outFile.put( 0x0000FFFF );
-		outFile.put( chunk_size );
+		outFile.put_u32( 0xFFFF );
+		outFile.put_u32( chunk_size );
 		char temp[ chunk_size ] = {0};
 		outFile.write( temp, chunk_size );
 	}
-	void shape::o_Shape_INI( util::fstream_B& outFile ) {	// INI
-		
+	void shape::o_Shape_INI ( util::fstream_B& outFile ) {	// INI
+		outFile.write( ini.c_str(), ini.size() );
 	}
 
 	/// in, out, manip, etc public functions
@@ -271,8 +410,8 @@ namespace mod {
 		
 		uint32_t chunk_opcode, chunk_size;						// Allocate vars
 		while ( 1 ) {
-			inFile.get( chunk_opcode );							// Read chunk_opcode
-			inFile.get( chunk_size );							// Read chunk_size
+			inFile.get_u32( chunk_opcode );							// Read chunk_opcode
+			inFile.get_u32( chunk_size );							// Read chunk_size
 			inFile.backup_g();									// Backup to chunk header
 			switch ( chunk_opcode ) {
 				case 0x0000: i_Shape_0000( inFile );    has_0000 = true; break;
@@ -299,27 +438,22 @@ namespace mod {
 				case 0x0080: i_Shape_0080( inFile );    has_0080 = true; break;
 				case 0x0100: i_Shape_0100( inFile );    has_0100 = true; break;
 				case 0x0110: i_Shape_0110( inFile );    has_0110 = true; break;
-				case 0xFFFF: goto end_of_file;
-				default:     goto illegal;
+				case 0xFFFF: {										// EOF
+					inFile.rewind_g();									// Rewind to chunk header
+					inFile.ignore( chunk_size );						// Jump to next chunk
+					inFile.peek();										// Peek for INI
+					if ( inFile.eof() ) return;							// If EOF, return.
+					i_Shape_INI( inFile ); has_INI = true;				// Otherwise, INI found
+					return;
+				}
+				default:     {										// Invalid Opcode
+					inFile.forget();									// Forget backup position
+					return;
+				}
 			}
 			inFile.rewind_g();									// Rewind to chunk header
 			inFile.ignore( chunk_size );						// Jump to next chunk
 		}
-		return;
-		
-		end_of_file:
-			inFile.rewind_g();									// Rewind to chunk header
-			inFile.ignore( chunk_size );						// Jump to next chunk
-			inFile.peek();										// Peek for INI
-			if ( inFile.eof() ) {								// If EOF
-				return;												// return
-			}
-			has_INI = true;										// INI found
-		return;
-			
-		illegal:
-			inFile.forget();									// Forget backup position
-		return;													// return
 	}
 	void shape::i_survey_Shape        ( const char* filename ) {
 		util::fstream_B inFile ( filename, std::ios::in | std::ios::binary );
@@ -327,10 +461,10 @@ namespace mod {
 		
 		uint32_t chunk_opcode, chunk_size, packet_count;		// Allocate vars
 		while ( 1 ) {
-			inFile.get( chunk_opcode );							// Read chunk_opcode
-			inFile.get( chunk_size );							// Read chunk_size
+			inFile.get_u32( chunk_opcode );						// Read chunk_opcode
+			inFile.get_u32( chunk_size );						// Read chunk_size
 			inFile.backup_g();									// Backup to chunk header
-			inFile.get( packet_count );							// Read packet_count
+			inFile.get_u32( packet_count );						// Read packet_count
 			switch ( chunk_opcode ) {							// Check for valid or EOF chunks
 				case 0x0000:case 0x0110:
 					printf( "opcode: %04X                        filepos: %6X\n",
@@ -426,6 +560,12 @@ namespace mod {
 			printf( "Warning!  CSV is larger than expected!\n" );
 		}
 	}
+	void shape::i_ini                 ( const char* filename ) {
+		util::fstream_B outFile ( filename, std::ios::out );	// Filestream
+		CHECK_IF_OPENED( outFile, filename )
+		
+		i_Shape_INI( outFile );
+	}
 	void shape::o_Shape               ( const char* filename ) {
 		util::fstream_B outFile ( filename, std::ios::out | std::ios::binary );	// Filestream
 		CHECK_IF_OPENED( outFile, filename )
@@ -494,6 +634,12 @@ namespace mod {
 			outFile.write( buffer, strlen( buffer ) );
 		}
 	}
+	void shape::o_ini                 ( const char* filename ) {
+		util::fstream_B outFile ( filename, std::ios::out );	// Filestream
+		CHECK_IF_OPENED( outFile, filename )
+		
+		o_Shape_INI( outFile );
+	}
 	void shape::m_colMesh_recalibrate (  ) {
 		for ( uint32_t packet_count = 0; packet_count < colMesh.size(); packet_count++ ) {
 			xyz& A = vtxPos[colMesh[packet_count].index_a];							// Lookup Vertex A
@@ -520,7 +666,7 @@ namespace mod {
 	void shape::m_survey_selfcheck    (  ) {
 		printf( "opcode: 0000                        %u\n", has_0000 );
 		printf( "opcode: 0010     packets: %5u     %u\n", vtxPos.size(),      has_0010 );
-//		printf( "opcode: 0013     packets: %5u     %u\n", vtxColor.size(),    has_0013 );
+		printf( "opcode: 0013     packets: %5u     %u\n", vtxColor.size(),    has_0013 );
 		printf( "opcode: 0011     packets: %5u     %u\n", vtxNrm.size(),      has_0011 );
 		printf( "opcode: 0012     packets: %5u     %u\n", vtxNBT.size(),      has_0012 );
 		printf( "opcode: 0018     packets: %5u     %u\n", texCoord[0].size(), has_0018 );
@@ -532,7 +678,7 @@ namespace mod {
 		printf( "opcode: 001E     packets: %5u     %u\n", texCoord[6].size(), has_001E );
 		printf( "opcode: 001F     packets: %5u     %u\n", texCoord[7].size(), has_001F );
 		printf( "opcode: 0020     packets: %5u     %u\n", texImg.size(),      has_0020 );
-//		printf( "opcode: 0022     packets: %5u     %u\n", vtxAttr.size(),     has_0022 );
+		printf( "opcode: 0022     packets: %5u     %u\n", texAttr.size(),     has_0022 );
 		printf( "opcode: 0030     packets: %5u     %u\n", material.size(),    has_0030 );
 //		printf( "opcode: 0041     packets: %5u     %u\n", mtxEvl.size(),      has_0041 );
 //		printf( "opcode: 0040     packets: %5u     %u\n", mtx.size(),         has_0040 );
@@ -545,14 +691,6 @@ namespace mod {
 		printf( "INI                                 %u\n", has_INI );
 	}
 
-	
-	/// constructors
-	shape::shape() {
-	}
-	shape::shape( const char* str ) {
-		i_Shape( str );
-	}
-	
 	/// misc C functions
 	xyz calculateNormal( const xyz& A, const xyz& B, const xyz& C ) {
 		xyz V ( (B.x - A.x), (B.y - A.y), (B.z - A.z) );	// Shift vector to start on origin
